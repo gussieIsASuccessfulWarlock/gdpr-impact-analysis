@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDPR Impact Analysis - Data Visualizations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            border-bottom: 3px solid #333;
+            padding-bottom: 20px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .graph-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .graph-section h2 {
+            color: #222;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            border-left: 5px solid #333;
+            padding-left: 15px;
+        }
+        
+        .graph-section p {
+            color: #555;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+        
+        .graph-section img {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .graph-section img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .toc {
+            background-color: #f9f9f9;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        
+        .toc h2 {
+            margin-bottom: 20px;
+            color: #222;
+        }
+        
+        .toc ul {
+            list-style-type: none;
+            column-count: 2;
+            column-gap: 30px;
+        }
+        
+        .toc li {
+            margin-bottom: 10px;
+        }
+        
+        .toc a {
+            color: #0066cc;
+            text-decoration: none;
+            font-size: 1.05em;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+            color: #004499;
+        }
+        
+        .key-info {
+            background-color: #fff9e6;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            border-left: 5px solid #ffcc00;
+        }
+        
+        .key-info h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .key-info ul {
+            margin-left: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .toc ul {
+                column-count: 1;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+        
+        /* Modal/Lightbox styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            position: relative;
+            margin: auto;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+        
+        .modal img {
+            display: block;
+            cursor: grab;
+            transition: transform 0.1s ease;
+            transform-origin: center center;
+        }
+        
+        .modal img.dragging {
+            cursor: grabbing;
+        }
+        
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+            transition: 0.3s;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+        }
+        
+        .graph-section img {
+            cursor: pointer;
+        }
+        
+        .zoom-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #f1f1f1;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1001;
+        }
+        
+        .zoom-level {
+            position: fixed;
+            top: 20px;
+            right: 80px;
+            color: #f1f1f1;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal for full-screen image viewing -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <div class="modal-content" id="modalContent">
+            <img id="modalImage" src="" alt="Full-screen view">
+        </div>
+        <div class="zoom-hint">Scroll to zoom • Drag to pan • ESC to close</div>
+    </div>
+    
+
+    <div class="container">
+        <h1>GDPR Impact Analysis: Data Visualizations</h1>
+        <p class="subtitle">Comprehensive analysis of digital infrastructure and R&D trends across Germany, Ireland, and Switzerland (2010-2025)</p>
+        
+        <div class="key-info">
+            <h3>Key Regulatory Milestones</h3>
+            <ul>
+                <li><strong>GDPR</strong> - May 25, 2018: General Data Protection Regulation</li>
+                <li><strong>DSA</strong> - November 16, 2022: Digital Services Act</li>
+                <li><strong>DMA</strong> - May 2, 2023: Digital Markets Act</li>
+                <li><strong>AI Act</strong> - February 2, 2025: Artificial Intelligence Act</li>
+            </ul>
+        </div>
+        
+        <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#graph01">1. Multi-Country Broadband Pricing Timeline</a></li>
+                <li><a href="#graph02">2. Internet Usage Adoption Trajectory</a></li>
+                <li><a href="#graph03">3. Broadband Speed Coverage Evolution</a></li>
+                <li><a href="#graph04">4. Individual Cloud Service Adoption</a></li>
+                <li><a href="#graph05">5. Total R&D Expenditure Growth (GERD)</a></li>
+                <li><a href="#graph06">6. Business R&D Expenditure (BRED)</a></li>
+                <li><a href="#graph07">7. Government R&D Spending (GOVERD)</a></li>
+                <li><a href="#graph08">8. Higher Education R&D (HRED)</a></li>
+                <li><a href="#graph09">9. Comparative R&D - Germany</a></li>
+                <li><a href="#graph10">10. Comparative R&D - Ireland</a></li>
+                <li><a href="#graph11">11. Comparative R&D - Switzerland</a></li>
+                <li><a href="#graph12">12. Enterprise Cloud Adoption - Germany</a></li>
+                <li><a href="#graph13">13. Enterprise Cloud Adoption - Ireland</a></li>
+                <li><a href="#graph14">14. Enterprise Cloud Adoption - Switzerland</a></li>
+                <li><a href="#graph15">15. Broadband Traffic Volume Evolution</a></li>
+                <li><a href="#graph16">16. Broadband Prices by Country</a></li>
+                <li><a href="#graph17">17. Three-Country Internet Usage</a></li>
+                <li><a href="#graph18">18. Three-Country Cloud Adoption</a></li>
+                <li><a href="#graph19">19. R&D Investment Acceleration Index</a></li>
+                <li><a href="#graph20">20. YoY Growth Around Regulations</a></li>
+                <li><a href="#graph21">21. Digital Infrastructure Maturity</a></li>
+                <li><a href="#graph22">22. Traffic Growth Before/After</a></li>
+                <li><a href="#graph23">23. Cumulative Investment Index</a></li>
+                <li><a href="#graph24">24. Pre vs Post-Regulation Metrics</a></li>
+                <li><a href="#graph25">25. Enterprise Cloud vs Regulations</a></li>
+                <li><a href="#graph26">26. Choropleth - Internet Growth</a></li>
+                <li><a href="#graph27">27. Choropleth - Cloud Adoption</a></li>
+                <li><a href="#graph28">28. Choropleth - GERD Growth</a></li>
+            </ul>
+        </div>
+        
+        <div id="graph01" class="graph-section">
+            <h2>1. Multi-Country Broadband Pricing Timeline</h2>
+            <p>This graph shows the evolution of broadband prices (100-200 Mbps) in Germany and Ireland from 2010 onwards. The vertical dotted lines indicate major regulatory milestones (GDPR, DSA, DMA, AI Act). This visualization helps identify whether regulatory changes correlate with pricing trends in broadband services.</p>
+            <img src="graph_01_broadband_pricing_timeline.png" alt="Multi-Country Broadband Pricing Timeline">
+        </div>
+        
+        <div id="graph02" class="graph-section">
+            <h2>2. Internet Usage Adoption Trajectory by Country</h2>
+            <p>Tracks the percentage of population using the internet across Germany, Ireland, and Switzerland. This metric is fundamental for understanding digital transformation and serves as a baseline indicator of how these countries have progressed in internet adoption relative to regulatory implementations.</p>
+            <img src="graph_02_internet_usage_trajectory.png" alt="Internet Usage Adoption Trajectory">
+        </div>
+        
+        <div id="graph03" class="graph-section">
+            <h2>3. Broadband Speed Coverage Evolution (>1 Gbps)</h2>
+            <p>Shows the percentage of households with access to broadband speeds greater than 1 Gbps in each country. This metric reflects infrastructure investment and technological advancement, which may be influenced by regulatory requirements for data processing and storage capabilities.</p>
+            <img src="graph_03_broadband_speed_evolution.png" alt="Broadband Speed Coverage Evolution">
+        </div>
+        
+        <div id="graph04" class="graph-section">
+            <h2>4. Individual Cloud Service Adoption Rates by Country</h2>
+            <p>Displays the percentage of individuals using cloud services across the three countries. Cloud adoption is particularly relevant to GDPR and subsequent regulations, as these services must comply with strict data protection and privacy requirements.</p>
+            <img src="graph_04_individual_cloud_adoption.png" alt="Individual Cloud Service Adoption">
+        </div>
+        
+        <div id="graph05" class="graph-section">
+            <h2>5. Total R&D Expenditure Growth Rates (GERD)</h2>
+            <p>GERD (Gross Domestic Expenditure on R&D) growth rates show the overall investment trends in research and development. This comprehensive metric includes all sectors and helps assess whether regulatory changes have influenced national innovation priorities and spending patterns.</p>
+            <img src="graph_05_gerd_growth_rates.png" alt="GERD Growth Rates">
+        </div>
+        
+        <div id="graph06" class="graph-section">
+            <h2>6. Business R&D Expenditure (BRED) Trends</h2>
+            <p>BRED tracks R&D investment specifically from the business sector. This is crucial for understanding how private enterprises have responded to regulatory requirements, potentially increasing investment in compliance technologies, data protection systems, and privacy-enhancing technologies.</p>
+            <img src="graph_06_bred_trends.png" alt="BRED Trends">
+        </div>
+        
+        <div id="graph07" class="graph-section">
+            <h2>7. Government R&D Spending (GOVERD) Response</h2>
+            <p>GOVERD represents government expenditure on R&D. This graph reveals whether governments have increased funding for research in response to regulatory needs, including cybersecurity, AI governance, and digital infrastructure development.</p>
+            <img src="graph_07_goverd_response.png" alt="GOVERD Response">
+        </div>
+        
+        <div id="graph08" class="graph-section">
+            <h2>8. Higher Education R&D Expenditure (HRED)</h2>
+            <p>HRED shows R&D investment from higher education institutions. Universities play a key role in developing new technologies and training the workforce needed for digital transformation and regulatory compliance.</p>
+            <img src="graph_08_hred_acceleration.png" alt="HRED Acceleration">
+        </div>
+        
+        <div id="graph09" class="graph-section">
+            <h2>9. Comparative R&D Investment by Source - Germany</h2>
+            <p>Compares all four R&D metrics (GERD, BRED, GOVERD, HRED) for Germany. This unified view helps identify which sectors are driving R&D growth and how they respond differently to regulatory milestones.</p>
+            <img src="graph_09_comparative_rd_germany.png" alt="Comparative R&D Germany">
+        </div>
+        
+        <div id="graph10" class="graph-section">
+            <h2>10. Comparative R&D Investment by Source - Ireland</h2>
+            <p>Compares all four R&D metrics for Ireland. Ireland's tech sector concentration makes this particularly interesting for understanding how multinational corporations respond to EU regulations.</p>
+            <img src="graph_10_comparative_rd_ireland.png" alt="Comparative R&D Ireland">
+        </div>
+        
+        <div id="graph11" class="graph-section">
+            <h2>11. Comparative R&D Investment by Source - Switzerland</h2>
+            <p>Compares all four R&D metrics for Switzerland. As a non-EU member with bilateral agreements, Switzerland's patterns may differ from Germany and Ireland, providing an interesting comparative baseline.</p>
+            <img src="graph_11_comparative_rd_switzerland.png" alt="Comparative R&D Switzerland">
+        </div>
+        
+        <div id="graph12" class="graph-section">
+            <h2>12. Enterprise Cloud Computing Adoption by Company Size - Germany</h2>
+            <p>Shows how cloud adoption varies by company size in Germany. Different size categories (10-249, 50-249, 10+, 250+ employees) may face different compliance challenges and have different resources to address regulatory requirements.</p>
+            <img src="graph_12_enterprise_cloud_germany.png" alt="Enterprise Cloud Germany">
+        </div>
+        
+        <div id="graph13" class="graph-section">
+            <h2>13. Enterprise Cloud Computing Adoption by Company Size - Ireland</h2>
+            <p>Enterprise cloud adoption segmented by company size in Ireland. The presence of major tech companies in Ireland makes this analysis particularly relevant for understanding enterprise-scale digital transformation.</p>
+            <img src="graph_13_enterprise_cloud_ireland.png" alt="Enterprise Cloud Ireland">
+        </div>
+        
+        <div id="graph14" class="graph-section">
+            <h2>14. Enterprise Cloud Computing Adoption by Company Size - Switzerland</h2>
+            <p>Enterprise cloud adoption by company size in Switzerland, showing how Swiss businesses of different scales are adopting cloud technologies in the context of data protection regulations.</p>
+            <img src="graph_14_enterprise_cloud_switzerland.png" alt="Enterprise Cloud Switzerland">
+        </div>
+        
+        <div id="graph15" class="graph-section">
+            <h2>15. Broadband Traffic Volume Evolution</h2>
+            <p>Tracks the total broadband traffic volume (in Exabytes) across the three countries. Increasing data traffic may reflect greater digital activity and could be influenced by how regulations affect data processing, storage, and transfer practices.</p>
+            <img src="graph_15_broadband_traffic_evolution.png" alt="Broadband Traffic Evolution">
+        </div>
+        
+        <div id="graph16" class="graph-section">
+            <h2>16. Broadband Prices by Regulation Period</h2>
+            <p>Detailed view of broadband pricing trends for Germany and Ireland individually, allowing for closer examination of price changes around specific regulatory implementation dates.</p>
+            <img src="graph_16a_broadband_prices_germany.png" alt="Broadband Prices Germany">
+            <img src="graph_16b_broadband_prices_ireland.png" alt="Broadband Prices Ireland">
+        </div>
+        
+        <div id="graph17" class="graph-section">
+            <h2>17. Three-Country Comparison: Internet Usage Growth Trajectory</h2>
+            <p>Direct comparison of internet usage growth across all three countries on a single graph, making it easier to identify convergence or divergence patterns in digital adoption rates.</p>
+            <img src="graph_17_three_country_internet_usage.png" alt="Three-Country Internet Usage">
+        </div>
+        
+        <div id="graph18" class="graph-section">
+            <h2>18. Three-Country Comparison: Cloud Service Adoption Rates</h2>
+            <p>Combines both individual and enterprise cloud adoption data for all three countries, showing the relationship between personal and business cloud usage patterns.</p>
+            <img src="graph_18_three_country_cloud_adoption.png" alt="Three-Country Cloud Adoption">
+        </div>
+        
+        <div id="graph19" class="graph-section">
+            <h2>19. R&D Investment Acceleration Index</h2>
+            <p>A cumulative index showing how R&D investment across all sectors has accelerated over time (2010 = 100). This normalized view helps identify whether the pace of R&D investment has changed following regulatory implementations.</p>
+            <img src="graph_19_rd_acceleration_index.png" alt="R&D Acceleration Index">
+        </div>
+        
+        <div id="graph20" class="graph-section">
+            <h2>20. YoY Growth Rate Comparison Around Regulatory Milestones</h2>
+            <p>Bar charts showing GERD growth rates in the years immediately before and after each major regulation (GDPR, DSA, DMA, AI Act). This focused analysis helps identify immediate impacts of regulatory changes.</p>
+            <img src="graph_20a_yoy_growth_gdpr.png" alt="YoY Growth GDPR">
+            <img src="graph_20b_yoy_growth_dsa.png" alt="YoY Growth DSA">
+            <img src="graph_20c_yoy_growth_dma.png" alt="YoY Growth DMA">
+            <img src="graph_20d_yoy_growth_ai.png" alt="YoY Growth AI Act">
+        </div>
+        
+        <div id="graph21" class="graph-section">
+            <h2>21. Digital Infrastructure Maturity Index</h2>
+            <p>Composite measure based on internet penetration rates, serving as a proxy for overall digital infrastructure maturity. Higher maturity may correlate with better ability to implement and comply with digital regulations.</p>
+            <img src="graph_21_digital_maturity_index.png" alt="Digital Maturity Index">
+        </div>
+        
+        <div id="graph22" class="graph-section">
+            <h2>22. Broadband Traffic Growth Rate Before/After Each Regulation</h2>
+            <p>Compares average broadband traffic growth rates in periods before and after each major regulation. This helps assess whether regulations have influenced data usage patterns and digital activity levels.</p>
+            <img src="graph_22_traffic_growth_before_after.png" alt="Traffic Growth Before/After">
+        </div>
+        
+        <div id="graph23" class="graph-section">
+            <h2>23. Cumulative Investment Change Index</h2>
+            <p>Shows the cumulative effect of R&D investment changes over time for each country, starting from a baseline of 100 in 2010. This reveals which countries have achieved the greatest sustained growth in R&D investment.</p>
+            <img src="graph_23_cumulative_investment_index.png" alt="Cumulative Investment Index">
+        </div>
+        
+        <div id="graph24" class="graph-section">
+            <h2>24. Pre vs Post-Regulation Average Metrics Comparison</h2>
+            <p>Side-by-side comparison of key metrics (Internet Usage Growth Rate, Cloud Adoption Growth Rate, GERD Growth Rate) averaging periods before and after GDPR (2018). This provides a clear snapshot of how growth patterns changed.</p>
+            <img src="graph_24a_internet_usage_comparison.png" alt="Internet Usage Comparison">
+            <img src="graph_24b_cloud_adoption_comparison.png" alt="Cloud Adoption Comparison">
+            <img src="graph_24c_gerd_comparison.png" alt="GERD Comparison">
+        </div>
+        
+        <div id="graph25" class="graph-section">
+            <h2>25. Enterprise Cloud Adoption vs Regulatory Periods</h2>
+            <p>Focuses on enterprise cloud adoption across different company sizes (10-249 and 250+ employees) with clear marking of regulatory periods. This helps understand how businesses of different scales responded to compliance requirements.</p>
+            <img src="graph_25_enterprise_cloud_vs_regulations.png" alt="Enterprise Cloud vs Regulations">
+        </div>
+        
+        <div id="graph26" class="graph-section">
+            <h2>26. Choropleth Map: Internet Usage Growth Rate Impact</h2>
+            <p>Geographic visualization comparing average internet usage growth rates before and after GDPR. The side-by-side maps with country shading make it easy to see spatial patterns in how GDPR affected internet adoption across the three countries.</p>
+            <img src="graph_26_choropleth_internet_growth.png" alt="Choropleth Internet Growth">
+        </div>
+        
+        <div id="graph27" class="graph-section">
+            <h2>27. Choropleth Map: Individual Cloud Adoption Growth Rate Impact</h2>
+            <p>Geographic visualization of how individual cloud service adoption growth rates changed before and after GDPR. The darker shading indicates higher growth rates, revealing which countries saw the most significant changes.</p>
+            <img src="graph_27_choropleth_cloud_adoption_growth.png" alt="Choropleth Cloud Adoption">
+        </div>
+        
+        <div id="graph28" class="graph-section">
+            <h2>28. Choropleth Map: Total R&D (GERD) Growth Rate Impact</h2>
+            <p>Geographic visualization of GERD growth rate changes before and after GDPR. This map format makes it particularly easy to compare Ireland's dramatic increase in R&D investment against the more modest changes in Germany and Switzerland.</p>
+            <img src="graph_28_choropleth_gerd_growth.png" alt="Choropleth GERD Growth">
+        </div>
+        
+    </div>
+    
+    <script>
+        // Get modal elements
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const modalContent = document.getElementById('modalContent');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        const zoomLevelDisplay = document.getElementById('zoomLevel');
+        
+        // Zoom and pan state
+        let scale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+        
+        // Add click event to all graph images
+        const graphImages = document.querySelectorAll('.graph-section img');
+        graphImages.forEach(img => {
+            img.addEventListener('click', function() {
+                modal.style.display = 'block';
+                modalImg.src = this.src;
+                modalImg.alt = this.alt;
+                
+                // Reset zoom and position
+                scale = 0.35;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+            });
+        });
+        
+        // Update image transform
+        function updateTransform() {
+            modalImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomLevelDisplay.textContent = Math.round(scale * 100) + '%';
+        }
+        
+        // Zoom with mouse wheel
+        modalContent.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            
+            const delta = e.deltaY * -0.001;
+            const newScale = Math.min(Math.max(0.05, scale + delta), 5);
+            
+            scale = newScale;
+            updateTransform();
+        });
+        
+        // Pan with mouse drag
+        modalContent.addEventListener('mousedown', function(e) {
+            if (e.target === modalImg) {
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                modalImg.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                modalImg.classList.remove('dragging');
+            }
+        });
+        
+        // Touch support for mobile
+        let initialDistance = 0;
+        let initialScale = 1;
+        
+        modalImg.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialScale = scale;
+            } else if (e.touches.length === 1 && scale > 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        });
+        
+        modalImg.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                scale = Math.min(Math.max(0.05, initialScale * (currentDistance / initialDistance)), 5);
+                updateTransform();
+            } else if (isDragging && e.touches.length === 1) {
+                e.preventDefault();
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                updateTransform();
+            }
+        });
+        
+        modalImg.addEventListener('touchend', function() {
+            isDragging = false;
+        });
+        
+        // Close modal when clicking the X
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+        });
+        
+        // Close modal when clicking the background
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+            }
+        });
+        
+        // Prevent closing when clicking the image
+        modalImg.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+        
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal.style.display === 'block') {
+                modal.style.display = 'none';
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+            }
+        });
+    </script>
+</body>
+</html>
