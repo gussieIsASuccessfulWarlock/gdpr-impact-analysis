@@ -41,8 +41,17 @@ REGULATION_COLORS = {
     'AI Act': '#888888'
 }
 
+# COVID-19 pandemic period
+COVID_START = datetime(2020, 3, 11)
+COVID_END = datetime(2023, 5, 1)
+
 def add_regulation_lines(ax, start_year=2010):
-    """Add vertical lines for regulations with text labels next to them"""
+    """Add vertical lines for regulations with text labels next to them and COVID-19 shaded region"""
+    # Add COVID-19 shaded region
+    covid_start_x = COVID_START.year + (COVID_START.month - 1) / 12
+    covid_end_x = COVID_END.year + (COVID_END.month - 1) / 12
+    ax.axvspan(covid_start_x, covid_end_x, alpha=0.15, color='gray', label='COVID-19 Pandemic')
+    
     for name, date in REGULATIONS.items():
         if date.year >= start_year:
             x_pos = date.year + (date.month - 1) / 12
@@ -568,38 +577,135 @@ plt.close()
 # ============================================================
 fig, ax = plt.subplots(figsize=(16, 9))
 
-for dataset_name, marker, label in [('gerd', 'o', 'GERD'), ('bred', 's', 'BRED'), 
-                                     ('goverd', '^', 'GOVERD'), ('hred', 'D', 'HRED')]:
-    df_temp = prepare_oecd_data(data[dataset_name])
-    all_countries = []
-    for country in ['Germany', 'Ireland', 'Switzerland']:
-        country_data = df_temp[df_temp['Time period'] == country].sort_values('Year').copy()
-        if not country_data.empty:
-            all_countries.append(country_data)
-    
-    if all_countries:
-        combined = pd.concat(all_countries).groupby('Year')['Value'].mean().reset_index()
-        combined = combined.dropna()
+df_gerd = prepare_oecd_data(data['gerd'])
+
+for country in ['Germany', 'Ireland', 'Switzerland']:
+    country_data = df_gerd[df_gerd['Time period'] == country].sort_values('Year').copy()
+    if not country_data.empty and len(country_data) > 0:
+        country_data = country_data.reset_index(drop=True)
+        country_data['Cumulative_Index'] = 100.0
+        for i in range(1, len(country_data)):
+            prev_idx = country_data.loc[i-1, 'Cumulative_Index']
+            growth = country_data.loc[i, 'Value']
+            if not np.isnan(growth):
+                country_data.loc[i, 'Cumulative_Index'] = prev_idx * (1 + growth/100)
         
-        # Calculate cumulative index
-        if len(combined) > 0:
-            combined['Index'] = 100.0
-            for i in range(1, len(combined)):
-                combined.loc[combined.index[i], 'Index'] = combined.loc[combined.index[i-1], 'Index'] * (1 + combined.loc[combined.index[i], 'Value']/100)
-            
-            ax.plot(combined['Year'], combined['Index'], 
-                   marker=marker, linewidth=2, markersize=6, label=label,
-                   color='black' if marker == 'o' else '#333333' if marker == 's' else '#666666' if marker == '^' else '#999999')
+        ax.plot(country_data['Year'], country_data['Cumulative_Index'], 
+               marker=country_markers[country], linewidth=2, markersize=7,
+               linestyle=country_styles[country],
+               label=country, color=country_colors[country])
 
 add_regulation_lines(ax)
 ax.set_xlabel('Year', fontsize=14, fontweight='bold')
 ax.set_ylabel('Investment Index (2010 = 100)', fontsize=14, fontweight='bold')
-ax.set_title('R&D Investment Acceleration Index (Three-Country Average)', 
+ax.set_title('R&D Investment Acceleration Index (GERD) by Country', 
             fontsize=16, fontweight='bold', pad=20)
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=4, framealpha=0.9)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3, framealpha=0.9)
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.savefig('graph_19_rd_acceleration_index.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ============================================================
+# 19a. BRED Investment Acceleration Index
+# ============================================================
+fig, ax = plt.subplots(figsize=(16, 9))
+
+df_bred = prepare_oecd_data(data['bred'])
+
+for country in ['Germany', 'Ireland', 'Switzerland']:
+    country_data = df_bred[df_bred['Time period'] == country].sort_values('Year').copy()
+    if not country_data.empty and len(country_data) > 0:
+        country_data = country_data.reset_index(drop=True)
+        country_data['Cumulative_Index'] = 100.0
+        for i in range(1, len(country_data)):
+            prev_idx = country_data.loc[i-1, 'Cumulative_Index']
+            growth = country_data.loc[i, 'Value']
+            if not np.isnan(growth):
+                country_data.loc[i, 'Cumulative_Index'] = prev_idx * (1 + growth/100)
+        
+        ax.plot(country_data['Year'], country_data['Cumulative_Index'], 
+               marker=country_markers[country], linewidth=2, markersize=7,
+               linestyle=country_styles[country],
+               label=country, color=country_colors[country])
+
+add_regulation_lines(ax)
+ax.set_xlabel('Year', fontsize=14, fontweight='bold')
+ax.set_ylabel('Investment Index (2010 = 100)', fontsize=14, fontweight='bold')
+ax.set_title('Business R&D Investment Acceleration Index (BRED) by Country', 
+            fontsize=16, fontweight='bold', pad=20)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3, framealpha=0.9)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('graph_19a_bred_acceleration_index.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ============================================================
+# 19b. GOVERD Investment Acceleration Index
+# ============================================================
+fig, ax = plt.subplots(figsize=(16, 9))
+
+df_goverd = prepare_oecd_data(data['goverd'])
+
+for country in ['Germany', 'Ireland', 'Switzerland']:
+    country_data = df_goverd[df_goverd['Time period'] == country].sort_values('Year').copy()
+    if not country_data.empty and len(country_data) > 0:
+        country_data = country_data.reset_index(drop=True)
+        country_data['Cumulative_Index'] = 100.0
+        for i in range(1, len(country_data)):
+            prev_idx = country_data.loc[i-1, 'Cumulative_Index']
+            growth = country_data.loc[i, 'Value']
+            if not np.isnan(growth):
+                country_data.loc[i, 'Cumulative_Index'] = prev_idx * (1 + growth/100)
+        
+        ax.plot(country_data['Year'], country_data['Cumulative_Index'], 
+               marker=country_markers[country], linewidth=2, markersize=7,
+               linestyle=country_styles[country],
+               label=country, color=country_colors[country])
+
+add_regulation_lines(ax)
+ax.set_xlabel('Year', fontsize=14, fontweight='bold')
+ax.set_ylabel('Investment Index (2010 = 100)', fontsize=14, fontweight='bold')
+ax.set_title('Government R&D Investment Acceleration Index (GOVERD) by Country', 
+            fontsize=16, fontweight='bold', pad=20)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3, framealpha=0.9)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('graph_19b_goverd_acceleration_index.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ============================================================
+# 19c. HRED Investment Acceleration Index
+# ============================================================
+fig, ax = plt.subplots(figsize=(16, 9))
+
+df_hred = prepare_oecd_data(data['hred'])
+
+for country in ['Germany', 'Ireland', 'Switzerland']:
+    country_data = df_hred[df_hred['Time period'] == country].sort_values('Year').copy()
+    if not country_data.empty and len(country_data) > 0:
+        country_data = country_data.reset_index(drop=True)
+        country_data['Cumulative_Index'] = 100.0
+        for i in range(1, len(country_data)):
+            prev_idx = country_data.loc[i-1, 'Cumulative_Index']
+            growth = country_data.loc[i, 'Value']
+            if not np.isnan(growth):
+                country_data.loc[i, 'Cumulative_Index'] = prev_idx * (1 + growth/100)
+        
+        ax.plot(country_data['Year'], country_data['Cumulative_Index'], 
+               marker=country_markers[country], linewidth=2, markersize=7,
+               linestyle=country_styles[country],
+               label=country, color=country_colors[country])
+
+add_regulation_lines(ax)
+ax.set_xlabel('Year', fontsize=14, fontweight='bold')
+ax.set_ylabel('Investment Index (2010 = 100)', fontsize=14, fontweight='bold')
+ax.set_title('Higher Education R&D Investment Acceleration Index (HRED) by Country', 
+            fontsize=16, fontweight='bold', pad=20)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3, framealpha=0.9)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('graph_19c_hred_acceleration_index.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # ============================================================
