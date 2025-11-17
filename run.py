@@ -105,6 +105,9 @@ def load_data():
     # HRED OECD
     data['hred'] = pd.read_csv('data/HRED OECD.csv')
     
+    # VPN searches
+    data['vpn_searches'] = pd.read_csv('data/multiTimeline.csv')
+    
     return data
 
 def prepare_oecd_data(df):
@@ -2077,8 +2080,8 @@ platform_linestyles = {
     'Twitter': '-.'
 }
 
-for platform, data in platforms.items():
-    ax.plot(monitoring_periods, data,
+for platform, platform_data in platforms.items():
+    ax.plot(monitoring_periods, platform_data,
             color=platform_colors[platform],
             linestyle=platform_linestyles[platform],
             marker=platform_markers[platform],
@@ -2108,5 +2111,50 @@ ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.savefig('graph_41_social_media_compliance_monitoring.png', dpi=300, bbox_inches='tight')
 plt.close()
+
+# ============================================================
+# 42. VPN Searches in Texas with House Bill 1181
+# ============================================================
+fig, ax = plt.subplots(figsize=(16, 9))
+df_vpn = data['vpn_searches']
+
+# Convert Week column to datetime
+df_vpn['Week'] = pd.to_datetime(df_vpn['Week'])
+
+# Plot VPN searches
+ax.plot(df_vpn['Week'], df_vpn['VPN Searches'],
+        color='#000000',
+        linestyle='-',
+        marker='o',
+        markersize=8,
+        linewidth=2.5,
+        label='VPN Searches',
+        markeredgecolor='black',
+        markeredgewidth=0.8)
+
+# Calculate and plot mean line
+mean_value = df_vpn['VPN Searches'].mean()
+ax.axhline(y=mean_value, color='#666666', linestyle=':', linewidth=2, alpha=0.7, label=f'Mean ({mean_value:.1f})')
+
+# Add House Bill 1181 marker on September 1, 2023
+hb1181_date = datetime(2023, 9, 1)
+ax.axvline(x=hb1181_date, color='#444444', linestyle='--', linewidth=2.5, alpha=0.8)
+ax.text(hb1181_date, ax.get_ylim()[1] * 0.95, 'House Bill 1181\n(Sept 1, 2023)', 
+        rotation=0, verticalalignment='top', horizontalalignment='center',
+        fontsize=12, fontweight='bold', 
+        bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
+                 edgecolor='black', linewidth=1.5))
+
+ax.set_xlabel('Date', fontsize=14, fontweight='bold')
+ax.set_ylabel('Search Interest (Normalized)', fontsize=14, fontweight='bold')
+ax.set_title('VPN-Related Search Interest in Texas with House Bill 1181', 
+            fontsize=16, fontweight='bold', pad=20)
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=2, framealpha=0.9)
+ax.grid(True, alpha=0.3)
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.savefig('graph_42_vpn_searches_texas.png', dpi=300, bbox_inches='tight')
+plt.close()
+
 
 print("All graphs completed successfully!")
